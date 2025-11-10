@@ -1,4 +1,4 @@
-> Code of the experiments for **Practical and Linear-Time Algorithms for Streaming Submodular Maximization with Knapsack Constraints** submitted to JMLR.
+> Code of the experiments for **Practical and Linear-Time Algorithms for Streaming Submodular Maximization with Knapsack Constraints** submitted to Artificial Intelligence (AIJ).
 
 ## Application: Maximum Coverage on Networks
 
