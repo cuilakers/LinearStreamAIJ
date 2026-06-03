@@ -25,9 +25,9 @@ double min_cost=999999999;
 double max_cost=0.0;
 double sum_cost=0.0;
 int K;
-string node_cost_text="./rndata/r1234/renum_cumulate_normalize_node_cost.txt";
+string node_cost_text="./rndata/r3/renum_cumulate_normalize_node_cost.txt";
 //string node_cost_text="renum_random_node_cost.txt";
-string edge_weight_text="./rndata/r1234/renum_random_edge_weight.txt";
+string edge_weight_text="./rndata/r3/renum_random_edge_weight.txt";
 const double ave_num=1.0/2.0;//normalize the cost to 1/ave_num in average
 double f_u(int node);
 class Node
@@ -47,6 +47,7 @@ public:
     double cost;
 };
 vector<Node> Groundset;
+double normalized_sum_cost=0.0;
 void read_data()
 {
     ifstream in1(node_cost_text);
@@ -64,17 +65,26 @@ void read_data()
 
         //temp_cost+=1.0;
 
+        // temp_cost=2.0-exp(-0.2*temp_cost);
 
         Groundset.emplace_back(temp_node,temp_cost);
 
-        // if(temp_cost<min_cost)
-        //     min_cost=temp_cost;
-        // if(temp_cost>max_cost)
-        //     max_cost=temp_cost;
+        if(temp_cost<min_cost)
+            min_cost=temp_cost;
+        if(temp_cost>max_cost)
+            max_cost=temp_cost;
 
         node_cost.push_back(temp_cost);
         sum_cost+=temp_cost;
     }
+
+    // cout << "before normalizing" << endl;
+    // cout<<"sum cost: "<<sum_cost<<endl;
+    // cout<<"max cost: "<<max_cost<<endl;
+    // cout<<"min cost: "<<min_cost<<endl;
+
+
+
     for(int i=0;i<node_num;i++)
         edge_weight.push_back(vector<pair<int,double>>());
     ifstream in2(edge_weight_text);
@@ -98,19 +108,35 @@ void read_data()
     // for(int i=0;i<node_num;i++)
     //     all_e_value.push_back(f_u(i));
 
+    // double normalize_min_cost=999999999.0;
+    // double normalize_max_cost=-1.0;
+
+    // for(auto & i : Groundset) {
+    //
+    //     double normalize_cost=(node_num*i.cost)/(sum_cost*ave_num);
+    //     i.cost=normalize_cost;
+    //
+    //     if(i.cost<normalize_min_cost)
+    //         normalize_min_cost=i.cost;
+    //     if(i.cost>normalize_max_cost)
+    //         normalize_max_cost=i.cost;
+    // }
+
+
+    double normalize_min_cost=999999999.0;
+    double normalize_max_cost=-1.0;
 
     for(auto & i : Groundset) {
-        double normalize_cost=(node_num*i.cost)/(sum_cost*ave_num);
+        double normalize_cost=i.cost/min_cost;
         i.cost=normalize_cost;
 
-        if(i.cost<min_cost)
-            min_cost=i.cost;
-        if(i.cost>max_cost)
-            max_cost=i.cost;
-    }
-    // cout<<"max cost: "<<max_cost<<endl;
-    // cout<<"min cost: "<<min_cost<<endl;
+        normalized_sum_cost += i.cost;
 
+        if(i.cost<normalize_min_cost)
+            normalize_min_cost=i.cost;
+        if(i.cost>normalize_max_cost)
+            normalize_max_cost=i.cost;
+    }
 
 }
 double f_u(int node)
