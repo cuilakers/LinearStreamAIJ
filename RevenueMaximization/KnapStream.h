@@ -97,8 +97,8 @@ Result KnapsackStreaming(double B,double eps)
         double left=ceil(log(left_temp)/log(1.0+eps));
         double right=floor(log(right_temp)/log(1.0+eps));
 
-        left=max(left,1.0);
-        right=max(right,1.0);
+        // left=max(left,1.0);
+        // right=max(right,1.0);
 
         if(min_gamma_index_in_C==-1)//first visit S_array
         {
@@ -255,6 +255,7 @@ Result KnapsackStreaming(double B,double eps)
         }
     }
 //*/
+    if (memory<=1) memory=1;
 
     // cout<<"KnapsackStream & Budget: "<<B<<endl;
     // cout<<"S*:"<<endl;
