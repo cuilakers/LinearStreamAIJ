@@ -52,6 +52,8 @@ public:
 };
 vector<Node> Groundset;
 vector<vector<int>> Edge;
+
+double normalized_sum_cost=0.0;
 void read_data()
 {
     ifstream in1(node_text);
@@ -73,7 +75,8 @@ void read_data()
 //        int cost=1+max(cost_temp,0);
         double cost=1.0+sqrt(degree_temp);
 
-        cost=5.0-exp(-0.2*cost);
+        // cost=2.0-exp(-0.2*cost);
+
         if(cost<min_cost)
             min_cost=cost;
         if(cost>max_cost)
@@ -87,6 +90,7 @@ void read_data()
     }
     in1.close();
 
+    // cout << "before normalizing" << endl;
     // cout<<"sum cost: "<<sum_cost<<endl;
     // cout<<"max cost: "<<max_cost<<endl;
     // cout<<"min cost: "<<min_cost<<endl;
@@ -95,7 +99,6 @@ void read_data()
     for(auto & i : Groundset) {
         Edge.emplace_back();
     }
-
 
     ifstream in2(edge_text);
     int v1,v2;
@@ -114,20 +117,38 @@ void read_data()
     node_num=node.size();
     in2.close();
 
+    // for(auto & i : Groundset) {
+    //     double normalize_cost=(node_num*i.cost)/(sum_cost*ave_num);
+    //     i.cost=normalize_cost;
+    //
+    //     if(i.cost<min_cost)
+    //         min_cost=i.cost;
+    //     if(i.cost>max_cost)
+    //         max_cost=i.cost;
+    // }
+
+    double normalize_min_cost=999999999.0;
+    double normalize_max_cost=-1.0;
+
     for(auto & i : Groundset) {
-        double normalize_cost=(node_num*i.cost)/(sum_cost*ave_num);
+        double normalize_cost=i.cost/min_cost;
         i.cost=normalize_cost;
 
-        if(i.cost<min_cost)
-            min_cost=i.cost;
-        if(i.cost>max_cost)
-            max_cost=i.cost;
+        normalized_sum_cost += i.cost;
+
+        if(i.cost<normalize_min_cost)
+            normalize_min_cost=i.cost;
+        if(i.cost>normalize_max_cost)
+            normalize_max_cost=i.cost;
     }
 
+    // cout << "after normalizing" << endl;
+    // cout<<"max cost: "<<normalize_max_cost<<endl;
+    // cout<<"min cost: "<<normalize_min_cost<<endl;
+    //
+    //
     // cout<<"map node size: "<<node_num<<endl;
     // cout<<"map edge size: "<<edge_num<<endl;
-    // cout<<"max cost: "<<max_cost<<endl;
-    // cout<<"min cost: "<<min_cost<<endl;
 }
 double f_u(const int &node_id)
 {
