@@ -38,28 +38,41 @@ int main(int argc,char *argv[]) {
     group_upper.resize(group_num);
     group_lower.resize(group_num);
 
-    double B_start=500.0;
-    double B_end=1000.0;
-    double B_step=50.0;
-    for(double B=B_start;B<=B_end;B+=B_step)
-    {
+
+    vector<double> betas;
+    double betas_start=0.002;
+    double betas_end=0.02001;
+    double betas_step=0.002;
+
+    for (double b = betas_start; b <= betas_end; b += betas_step)
+        betas.push_back(b);
+
+
+    vector<double> budgets;
+    for (double beta : betas) {
+        budgets.push_back(beta * normalized_sum_cost);
+    }
+    for (size_t idx = 0; idx < budgets.size(); ++idx) {
+        double B = budgets[idx];
+        double beta = betas[idx];
+        cout << "Budget ratio=" << beta << ", Budget=" << B << endl;
+
         onestream_result.emplace_back(OneStream(B,eps));
         multistream_result.emplace_back(MultiStream(B,eps));
         smkstream_result.emplace_back(SmkStream(B,eps));
         DMRT_result.emplace_back(DynamicMRT(B,eps));
-
     }
 
     ofstream out(outtext);
     if(B_wrong)
         out<<"Budget is wrong !"<<endl;
     out<<"eps: "<<eps<<endl;
-    out<<"max node: "<<endl;
-    for(double B=B_start;B<=B_end;B+=B_step)
-    {
-        out<<B<<"\t";
+    // out<<"max node: "<<endl;
+    out << "Budget ratio:" << endl;
+    for (double beta : betas) {
+        out << beta << "\t";
     }
-    out<<endl;
+    out << endl;
 
     out<<"OneStream "<<endl;
     out<<"utility: "<<endl;
@@ -100,8 +113,6 @@ int main(int argc,char *argv[]) {
         out<<p.memory<<"\t";
     }
     out<<endl;
-
-
 
 
     out<<"DynamicMRT "<<endl;
