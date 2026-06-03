@@ -158,7 +158,7 @@ S_class OneStreamForMulti(double B,double eps,int h, long long int &query,long l
     // cout<<"B = "<<B<<endl;
 
     int e_star=-1;
-    double e_star_value=-999.0;
+    // double e_star_value=-999.0;
 
     // cout<<"h = "<<h<<endl;
     vector<Si> S_array;
@@ -190,6 +190,8 @@ S_class OneStreamForMulti(double B,double eps,int h, long long int &query,long l
             T.add_element(marginal,e);
 
             if(S_array[i].sum_cost>=B) {
+                memory=max(memory,(long long int)T.solution.size());
+
                 //delete sets
                 if(i-j+1>=2*h) {
                     j=j+h;
@@ -208,6 +210,7 @@ S_class OneStreamForMulti(double B,double eps,int h, long long int &query,long l
     }
     T.s_revenue=T.f_S();
 
+    memory=max(memory,(long long int)T.solution.size());
     // cout<<"T revenue: "<<T.s_revenue<<endl;
     // cout<<"T cost: "<<T.s_cost<<endl;
     // cout<<"T node"<<endl;
@@ -248,7 +251,7 @@ S_class OneStreamForMulti(double B,double eps,int h, long long int &query,long l
                     Q.s_revenue=Q.f_S();
                 }
 
-                if (f_u(S_array[it].set.back())>Q.s_revenue) {
+                if (f_u(S_array[it].set.back())>Q.s_revenue && budget_feasible_single(S_array[it].set.back(),B) ) {
                     Q.replace_with_singleton(S_array[it].set.back());
                 }
             }
@@ -256,8 +259,8 @@ S_class OneStreamForMulti(double B,double eps,int h, long long int &query,long l
         }
     }
 
-    if(e_star_value>Q.s_revenue)
-        Q.replace_with_singleton(e_star);
+    // if(e_star_value>Q.s_revenue)
+    //     Q.replace_with_singleton(e_star);
 
     // cout<<"S*:"<<endl;
     // cout << "  revenue: " << Q.s_revenue << " cost: " <<Q.s_cost << " size: " << Q.solution.size() << endl;
