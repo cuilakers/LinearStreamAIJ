@@ -5,6 +5,53 @@
 #include "SmkStream.h"
 #include "MultiStream.h"
 #include "KnapStream.h"
+
+#include <cmath>
+#include <functional>
+
+struct ResultStats {
+    Result mean;
+    Result stddev;
+
+    ResultStats(Result mean_, Result stddev_)
+        : mean(mean_), stddev(stddev_) {}
+};
+
+ResultStats compute_stats(const vector<Result>& results) {
+    int repeat_times = results.size();
+
+    Result total(0, 0, 0);
+    for (const auto& result : results) {
+        total = total + result;
+    }
+
+    Result mean = total / repeat_times;
+
+    double var_revenue = 0.0;
+    double var_oracle = 0.0;
+    double var_memory = 0.0;
+
+    if (repeat_times > 1) {
+        for (const auto& result : results) {
+            var_revenue += (result.revenue - mean.revenue) * (result.revenue - mean.revenue);
+            var_oracle += (result.oracle - mean.oracle) * (result.oracle - mean.oracle);
+            var_memory += (result.memory - mean.memory) * (result.memory - mean.memory);
+        }
+
+        var_revenue /= (repeat_times - 1);
+        var_oracle /= (repeat_times - 1);
+        var_memory /= (repeat_times - 1);
+    }
+
+    Result stddev(
+        sqrt(var_revenue),
+        sqrt(var_oracle),
+        sqrt(var_memory)
+    );
+
+    return ResultStats(mean, stddev);
+}
+
 int main(int argc,char *argv[]) {
     //random_weight();
     //random_cost();
@@ -40,126 +87,186 @@ int main(int argc,char *argv[]) {
     vector<Result> smkstream_result;
     vector<Result> knapstream_result;
 
-    vector<Result> DMRT_result;
-    vector<Result> multiplexgreedy_result;
-    vector<Result> matknapstream_result;
+    vector<Result> onestream_std;
+    vector<Result> multistream_std;
 
-    double B_start=50.0;
-    double B_end=500.0;
-    double B_step=45.0;
-    for(double B=B_start;B<=B_end;B+=B_step) {
-        int repeat_times=10;
-        Result total_result_one(0, 0, 0);
+    vector<double> betas;
+    double betas_start=0.02;
+    double betas_end=0.20001;
+    double betas_step=0.02;
+
+    for (double b = betas_start; b <= betas_end; b += betas_step)
+        betas.push_back(b);
+
+    vector<double> budgets;
+    for (double beta : betas) {
+        budgets.push_back(beta * normalized_sum_cost);
+    }
+
+    int repeat_times = 10;
+    for (size_t idx = 0; idx < budgets.size(); ++idx) {
+        double B = budgets[idx];
+        double beta = betas[idx];
+        cout << "Budget ratio=" << beta << ", Budget=" << B << endl;
+
+        vector<Result> one_repeat_results;
+        one_repeat_results.reserve(repeat_times);
+
         for (int i = 0; i < repeat_times; ++i) {
             Result current_result = OneStream(B, eps);
-            total_result_one = total_result_one + current_result;
+            one_repeat_results.push_back(current_result);
         }
-        Result average_result_one = total_result_one / repeat_times;
-        onestream_result.push_back(average_result_one);
 
-        Result total_result_multi(0, 0, 0);
+        ResultStats one_stats = compute_stats(one_repeat_results);
+        onestream_result.push_back(one_stats.mean);
+        onestream_std.push_back(one_stats.stddev);
+
+
+        vector<Result> multi_repeat_results;
+        multi_repeat_results.reserve(repeat_times);
+
         for (int i = 0; i < repeat_times; ++i) {
             Result current_result = MultiStream(B, eps);
-            total_result_multi = total_result_multi + current_result;
+            multi_repeat_results.push_back(current_result);
         }
-        Result average_result_multi = total_result_multi / repeat_times;
-        multistream_result.push_back(average_result_multi);
 
-        smkstream_result.emplace_back(SmkStream(B,eps));
-        knapstream_result.emplace_back(KnapsackStreaming(B,eps));
+        ResultStats multi_stats = compute_stats(multi_repeat_results);
+        multistream_result.push_back(multi_stats.mean);
+        multistream_std.push_back(multi_stats.stddev);
 
+
+        // Deterministic baselines: run once, no error bars needed.
+        smkstream_result.emplace_back(SmkStream(B, eps));
+        knapstream_result.emplace_back(KnapsackStreaming(B, eps));
     }
 
 
     ofstream out(outtext);
     out<<"eps: "<<eps<<endl;
-    //out<<"real Budget: "<<endl;
-    for(double B=B_start;B<=B_end;B+=B_step)
-    {
-        out<<B<<"\t";
+    out << "Budget ratio:" << endl;
+    for (double beta : betas) {
+        out << beta << "\t";
     }
-    out<<endl;
-
-    out<<"OneStream "<<endl;
-    out<<"utility: "<<endl;
-    for(auto p:onestream_result)
-    {
-        out<<p.revenue<<"\t";
-    }
-    out<<endl;
-    out<<"query: "<<endl;
-    for(auto p:onestream_result)
-    {
-        out<<p.oracle<<"\t";
-    }
-    out<<endl;
-    out<<"memory: "<<endl;
-    for(auto p:onestream_result)
-    {
-        out<<p.memory<<"\t";
-    }
-    out<<endl;
-
-    out<<"MultiStream "<<endl;
-    out<<"utility: "<<endl;
-    for(auto p:multistream_result)
-    {
-        out<<p.revenue<<"\t";
-    }
-    out<<endl;
-    out<<"query: "<<endl;
-    for(auto p:multistream_result)
-    {
-        out<<p.oracle<<"\t";
-    }
-    out<<endl;
-    out<<"memory: "<<endl;
-    for(auto p:multistream_result)
-    {
-        out<<p.memory<<"\t";
-    }
-    out<<endl;
+    out << endl;
 
 
-    out<<"KnapsackStream "<<endl;
-    out<<"revenue: "<<endl;
-    for(auto p:knapstream_result)
-    {
-        out<<p.revenue<<"\t";
-    }
-    out<<endl;
-    out<<"query: "<<endl;
-    for(auto p:knapstream_result)
-    {
-        out<<p.oracle<<"\t";
-    }
-    out<<endl;
-    out<<"memory: "<<endl;
-    for(auto p:knapstream_result)
-    {
-        out<<p.memory<<"\t";
-    }
-    out<<endl;
+     out << "OneStream" << endl;
 
-    out<<"SmkStream "<<endl;
-    out<<"revenue: "<<endl;
-    for(auto p:smkstream_result)
-    {
-        out<<p.revenue<<"\t";
+    out << "utility_mean:" << endl;
+    for (auto p : onestream_result) {
+        out << p.revenue << "\t";
     }
-    out<<endl;
-    out<<"query: "<<endl;
-    for(auto p:smkstream_result)
-    {
-        out<<p.oracle<<"\t";
-    }
-    out<<endl;
-    out<<"memory: "<<endl;
-    for(auto p:smkstream_result)
-    {
-        out<<p.memory<<"\t";
-    }
-    out<<endl;
+    out << endl;
 
+    out << "utility_std:" << endl;
+    for (auto p : onestream_std) {
+        out << p.revenue << "\t";
+    }
+    out << endl;
+
+    out << "query_mean:" << endl;
+    for (auto p : onestream_result) {
+        out << p.oracle << "\t";
+    }
+    out << endl;
+
+    out << "query_std:" << endl;
+    for (auto p : onestream_std) {
+        out << p.oracle << "\t";
+    }
+    out << endl;
+
+    out << "memory_mean:" << endl;
+    for (auto p : onestream_result) {
+        out << p.memory << "\t";
+    }
+    out << endl;
+
+    out << "memory_std:" << endl;
+    for (auto p : onestream_std) {
+        out << p.memory << "\t";
+    }
+    out << endl;
+
+
+    out << "MultiStream" << endl;
+
+    out << "utility_mean:" << endl;
+    for (auto p : multistream_result) {
+        out << p.revenue << "\t";
+    }
+    out << endl;
+
+    out << "utility_std:" << endl;
+    for (auto p : multistream_std) {
+        out << p.revenue << "\t";
+    }
+    out << endl;
+
+    out << "query_mean:" << endl;
+    for (auto p : multistream_result) {
+        out << p.oracle << "\t";
+    }
+    out << endl;
+
+    out << "query_std:" << endl;
+    for (auto p : multistream_std) {
+        out << p.oracle << "\t";
+    }
+    out << endl;
+
+    out << "memory_mean:" << endl;
+    for (auto p : multistream_result) {
+        out << p.memory << "\t";
+    }
+    out << endl;
+
+    out << "memory_std:" << endl;
+    for (auto p : multistream_std) {
+        out << p.memory << "\t";
+    }
+    out << endl;
+
+
+    out << "SmkStream" << endl;
+
+    out << "utility:" << endl;
+    for (auto p : smkstream_result) {
+        out << p.revenue << "\t";
+    }
+    out << endl;
+
+    out << "query:" << endl;
+    for (auto p : smkstream_result) {
+        out << p.oracle << "\t";
+    }
+    out << endl;
+
+    out << "memory:" << endl;
+    for (auto p : smkstream_result) {
+        out << p.memory << "\t";
+    }
+    out << endl;
+
+
+    out << "KnapsackStream" << endl;
+
+    out << "utility:" << endl;
+    for (auto p : knapstream_result) {
+        out << p.revenue << "\t";
+    }
+    out << endl;
+
+    out << "query:" << endl;
+    for (auto p : knapstream_result) {
+        out << p.oracle << "\t";
+    }
+    out << endl;
+
+    out << "memory:" << endl;
+    for (auto p : knapstream_result) {
+        out << p.memory << "\t";
+    }
+    out << endl;
     return 0;
 }
