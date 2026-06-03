@@ -21,8 +21,9 @@ Result MultiStream(double B,double eps)
     // cout<<ell<<endl;
 
     S_class M;
+    long long int onestream_max_memory=0;
     for(int i=0;i<ell;i++) {
-        S_class T1 = OneStreamForMulti(B, 0.1, h, query, memory);
+        S_class T1 = OneStreamForMulti(B, 0.1, h, query, onestream_max_memory);
         if (T1.s_revenue>M.s_revenue)
             M=T1;
     }
@@ -91,8 +92,8 @@ Result MultiStream(double B,double eps)
 
         //vector<double> C;
         /*******fix bug*******/
-        left=max(left,1.0);
-        right=max(right,1.0);
+        // left=max(left,1.0);
+        // right=max(right,1.0);
         /*******fix bug*******/
         if(min_gamma_index_in_C==-1)//first visit S_array
         {
@@ -176,10 +177,11 @@ Result MultiStream(double B,double eps)
                 {
                     S_array[iter].spair[max_solution].add_element(max_marginal,u);
                 }
-            }
-            if(S_array[iter].spair[max_solution].s_revenue > S_best.s_revenue)
-            {
-                S_best=S_array[iter].spair[max_solution];
+
+                if(S_array[iter].spair[max_solution].s_revenue > S_best.s_revenue)
+                {
+                    S_best=S_array[iter].spair[max_solution];
+                }
             }
         }
     }
@@ -218,7 +220,8 @@ Result MultiStream(double B,double eps)
         }
     }
     memory/=node_num;
-
+    if (onestream_max_memory>memory) memory=onestream_max_memory;
+    if (memory<=1) memory=1;
 
     // foreach S^gamma to boost the best solution
      for(int iter=min_gamma_index_in_C;iter<S_array.size();iter++)
