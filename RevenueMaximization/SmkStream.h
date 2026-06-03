@@ -87,8 +87,8 @@ Result SmkStream(double B,double eps)
 
         //vector<double> C;
         /*******fix bug*******/
-        left=max(left,1.0);
-        right=max(right,1.0);
+        // left=max(left,1.0);
+        // right=max(right,1.0);
         /*******fix bug*******/
         if(min_gamma_index_in_C==-1)//first visit S_array
         {
@@ -201,6 +201,7 @@ Result SmkStream(double B,double eps)
         }
     }
     memory/=node_num;
+    if (memory<=1) memory=1;
 
     // cout<<"S*:"<<endl;
     // cout << "  revenue: " << S_best.s_revenue << " cost: " << S_best.s_cost << " size: " << S_best.solution.size() << endl;
